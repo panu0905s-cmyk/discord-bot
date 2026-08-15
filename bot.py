@@ -1,10 +1,6 @@
-import discord
-import aiohttp
-import os
-from urllib.parse import quote
+import discord, os, aiohttp, urllib.parse
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PERSONALITY = "แกคือบอท Discord ชื่อ Chat gpt ตอบกวนๆ เป็นกันเอง ภาษาไทย"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,26 +8,27 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'✅ {client.user} ออนไลน์')
+    print(f'✅ {client.user} online')
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author == client.user: 
         return
     if message.content.startswith("!ai") or client.user in message.mentions:
-        txt = message.content.replace("!ai","").replace(f"<@{client.user.id}>","").strip()
-        if not txt:
-            txt = "ว่าไง"
-        prompt = f"{PERSONALITY}\nคนพิมพ์: {txt}\nตอบ:"
+        q = message.content.replace("!ai","").replace(f"<@{client.user.id}>","").strip()
+        if not q: 
+            q = "ว่าไง"
+        
+        # ใช้แบบไม่ต้องใส่คีย์ ฟรีตลอดชีพ
+        url = f"https://text.pollinations.ai/{urllib.parse.quote('ตอบไทยสั้นๆกวนๆ: '+q)}"
+        
         async with message.channel.typing():
             try:
-                safe = quote(prompt)
-                url = f"https://text.pollinations.ai/{safe}"
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as r:
-                        t = await r.text()
-                await message.reply(t[:1900])
+                async with aiohttp.ClientSession() as s:
+                    async with s.get(url) as r:
+                        txt = await r.text()
+                        await message.reply(txt[:1900])
             except Exception as e:
-                await message.reply(f"Error: {e}")
+                await message.reply(f"เอ๋อแปป: {e}")
 
 client.run(TOKEN)
