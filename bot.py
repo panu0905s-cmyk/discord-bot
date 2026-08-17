@@ -10,15 +10,20 @@ class H(BaseHTTPRequestHandler):
  def do_GET(self):
   self.send_response(200)
   self.end_headers()
-  self.wfile.write(b"ok")
+  self.wfile.write(b"Bot is alive")
 
-def run():
- HTTPServer(("0.0.0.0",int(os.getenv("PORT","10000"))),H()).serve_forever()
-threading.Thread(target=run,daemon=True).start()
+def run_web():
+ HTTPServer(("0.0.0.0", int(os.getenv("PORT", "10000"))), H).serve_forever()
+
+threading.Thread(target=run_web, daemon=True).start()
 
 intents=discord.Intents.default()
 intents.message_content=True
 client=discord.Client(intents=intents)
+
+@client.event
+async def on_ready():
+ print(f"Bot {client.user} online!")
 
 @client.event
 async def on_message(m):
@@ -33,7 +38,7 @@ async def on_message(m):
     d=await r.json()
     try:
      await m.reply(d["choices"][0]["message"]["content"][:1900])
-    except:
-     await m.reply(f"Error: {str(d)[:1000]}")
+    except Exception as e:
+     await m.reply(f"Groq Error: {str(d)[:1000]}")
 
 client.run(TOKEN)
