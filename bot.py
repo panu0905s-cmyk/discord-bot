@@ -1,30 +1,13 @@
-import discord, os, threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import aiohttp
-
+import discord, os, aiohttp
 TOKEN=os.getenv("DISCORD_TOKEN")
 GROQ=os.getenv("GROQ_API_KEY")
 ROOM=1538774173667692604
-
-class H(BaseHTTPRequestHandler):
- def do_GET(self):
-  self.send_response(200)
-  self.end_headers()
-  self.wfile.write(b"Bot is alive")
-
-def run_web():
- HTTPServer(("0.0.0.0", int(os.getenv("PORT", "10000"))), H).serve_forever()
-
-threading.Thread(target=run_web, daemon=True).start()
-
 intents=discord.Intents.default()
 intents.message_content=True
 client=discord.Client(intents=intents)
-
 @client.event
 async def on_ready():
- print(f"Bot {client.user} online!")
-
+ print("BOT ONLINE")
 @client.event
 async def on_message(m):
  if m.author==client.user: return
@@ -36,9 +19,6 @@ async def on_message(m):
    payload={"model":"llama3-8b-8192","messages":[{"role":"user","content":q}]}
    async with s.post("https://api.groq.com/openai/v1/chat/completions",headers={"Authorization":f"Bearer {GROQ}","Content-Type":"application/json"},json=payload) as r:
     d=await r.json()
-    try:
-     await m.reply(d["choices"][0]["message"]["content"][:1900])
-    except Exception as e:
-     await m.reply(f"Groq Error: {str(d)[:1000]}")
-
+    txt=d.get("choices",[{}])[0].get("message",{}).get("content","Error")
+    await m.reply(txt[:1900])
 client.run(TOKEN)
